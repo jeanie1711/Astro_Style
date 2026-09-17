@@ -1,5 +1,9 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import AppTopBar from "@/components/AppTopBar";
 import type { BirthDetails as BirthDetailsData } from "@/lib/style-data";
+import type { GeocodeResult } from "@/lib/astrology/geocode";
 
 type Props = {
   onBack: () => void;
@@ -15,6 +19,39 @@ const labelClass = "text-[11px] font-semibold tracking-[.1em] text-mushroom uppe
 
 export default function BirthDetails({ onBack, onNext, details, onChange, error }: Props) {
   const canContinue = details.date.trim() && details.time.trim() && details.place.trim();
+
+  const [suggestions, setSuggestions] = useState<GeocodeResult[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suppressNextSearch, setSuppressNextSearch] = useState(false);
+
+  useEffect(() => {
+    if (suppressNextSearch) {
+      setSuppressNextSearch(false);
+      return;
+    }
+    const query = details.place.trim();
+    if (query.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetch(`/api/geocode-search?q=${encodeURIComponent(query)}`)
+        .then((res) => res.json())
+        .then((data) => setSuggestions(data.results ?? []))
+        .catch(() => setSuggestions([]));
+    }, 350);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [details.place]);
+
+  function selectSuggestion(result: GeocodeResult) {
+    setSuppressNextSearch(true);
+    setShowSuggestions(false);
+    setSuggestions([]);
+    onChange({ ...details, place: result.displayName });
+  }
 
   return (
     <div className="flex h-full flex-col bg-ivory">
@@ -47,15 +84,36 @@ export default function BirthDetails({ onBack, onNext, details, onChange, error 
             onChange={(e) => onChange({ ...details, time: e.target.value })}
           />
         </label>
-        <label className="flex flex-col gap-2">
+        <label className="relative flex flex-col gap-2">
           <span className={labelClass}>Birthplace</span>
           <input
             type="text"
             placeholder="City, Country"
             className={inputClass}
             value={details.place}
-            onChange={(e) => onChange({ ...details, place: e.target.value })}
+            onChange={(e) => {
+              onChange({ ...details, place: e.target.value });
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+            autoComplete="off"
           />
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="absolute top-full z-10 mt-1 flex w-full flex-col overflow-hidden rounded-xl border border-border bg-white shadow-lg">
+              {suggestions.map((s) => (
+                <li key={`${s.latitude},${s.longitude}`}>
+                  <button
+                    type="button"
+                    onMouseDown={() => selectSuggestion(s)}
+                    className="w-full px-4 py-3 text-left text-[13px] text-ink hover:bg-cream"
+                  >
+                    {s.displayName}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </label>
         <button
           onClick={onNext}
