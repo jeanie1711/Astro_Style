@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-work-sans);
+
+  /* Signature 8 */
+  --color-ink: #171717;
+  --color-charcoal: #36363a;
+  --color-espresso: #4b342b;
+  --color-ivory: #f6f1e8;
+  --color-taupe: #b8a899;
+  --color-oxblood: #5c1f28;
+  --color-emerald: #0f5c4d;
+  --color-cobalt: #2457d6;
+
+  /* Base */
+  --color-cream: #efe4d2;
+  --color-mushroom: #9a8c82;
+  --color-navy: #1e2c46;
+
+  /* Statement */
+  --color-burgundy: #6e2436;
+  --color-plum: #5b3a57;
+  --color-petrol: #1f5a63;
+
+  /* Fresh accents */
+  --color-sky: #afcbef;
+  --color-coral: #e56b5d;
+  --color-sage: #a9bfa8;
+  --color-blush: #e9cfcb;
+
+  /* Metals */
+  --color-gold: #d6b36a;
+  --color-brushed-gold: #c6a15b;
+  --color-silver: #c9ccd3;
+
+  /* UI */
+  --color-border: #e3d7c5;
+  --color-dark-card: #232323;
+  --color-gold-card: #2b2318;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes spin-ring {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+}

@@ -1,0 +1,125 @@
+"use client";
+
+import { useState } from "react";
+import { EMPTY_BIRTH_DETAILS, MOCK_RESULT, type BirthDetails as BirthDetailsData, type StyleResult } from "@/lib/style-data";
+import { formatProfileLine, type NatalChart } from "@/lib/astrology/natal-chart";
+import { interpretColorAttributes, interpretStyleAttributes } from "@/lib/interpretation/interpret";
+import { generatePalette } from "@/lib/color-engine/engine";
+import { generateStyleBoard } from "@/lib/style-engine/engine";
+import { generateEssence } from "@/lib/copy-engine/engine";
+import { generateWhyTheseColors } from "@/lib/copy-engine/why-these-colors";
+import Landing from "@/components/screens/Landing";
+import BirthDetails from "@/components/screens/BirthDetails";
+import Calculating from "@/components/screens/Calculating";
+import EssenceReveal from "@/components/screens/EssenceReveal";
+import SignaturePalette from "@/components/screens/SignaturePalette";
+import WhyTheseColors from "@/components/screens/WhyTheseColors";
+import StyleDirection from "@/components/screens/StyleDirection";
+import OutfitBoard from "@/components/screens/OutfitBoard";
+import Paywall from "@/components/screens/Paywall";
+import SaveShare from "@/components/screens/SaveShare";
+
+const SCREEN_COUNT = 10;
+
+export default function AppFlow() {
+  const [screen, setScreen] = useState(0);
+  const [unlocked, setUnlocked] = useState(false);
+  const [birthDetails, setBirthDetails] = useState<BirthDetailsData>(EMPTY_BIRTH_DETAILS);
+  const [natalChart, setNatalChart] = useState<NatalChart | null>(null);
+  const [calcError, setCalcError] = useState<string | null>(null);
+
+  const goTo = (n: number) => setScreen(Math.max(0, Math.min(SCREEN_COUNT - 1, n)));
+
+  // Real Astrology + Interpretation + Color + Style + Copy/Essence engines
+  // feed every piece of the result once a chart is computed.
+  const profileLine = natalChart ? formatProfileLine(natalChart) : MOCK_RESULT.profileLine;
+
+  const result: StyleResult = (() => {
+    if (!natalChart) return MOCK_RESULT;
+    const colorAttributes = interpretColorAttributes(natalChart);
+    const styleAttributes = interpretStyleAttributes(natalChart);
+    const palette = generatePalette(colorAttributes);
+    const board = generateStyleBoard(styleAttributes, colorAttributes.contrast);
+    const essence = generateEssence(colorAttributes, styleAttributes);
+
+    return {
+      ...MOCK_RESULT,
+      essenceWords: essence.essenceWords,
+      styleStatement: essence.styleStatement,
+      whyTheseColors: generateWhyTheseColors(natalChart, palette.signature),
+      signaturePalette: palette.signature,
+      baseColors: palette.base,
+      statementColors: palette.statement,
+      freshAccents: palette.accents,
+      styleDirection: [
+        { label: "SILHOUETTES", value: board.direction.silhouettes },
+        { label: "FABRICS", value: board.direction.fabrics },
+        { label: "JEWELRY", value: board.direction.jewelry },
+        { label: "CONTRAST", value: board.direction.contrast },
+      ],
+      archetypes: MOCK_RESULT.archetypes.map((a, i) => ({
+        ...a,
+        tags: board.archetypes[i].tags,
+        desc: board.archetypes[i].desc,
+        swatches: [
+          palette.signature[i % palette.signature.length].hex,
+          palette.signature[(i + 2) % palette.signature.length].hex,
+          palette.signature[(i + 4) % palette.signature.length].hex,
+          palette.base[i % palette.base.length].hex,
+          palette.accents[i % palette.accents.length].hex,
+        ],
+      })),
+    };
+  })();
+
+  return (
+    <div className="mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden bg-ivory shadow-xl">
+      {screen === 0 && <Landing onNext={() => goTo(1)} />}
+      {screen === 1 && (
+        <BirthDetails
+          onBack={() => goTo(0)}
+          onNext={() => {
+            setCalcError(null);
+            goTo(2);
+          }}
+          details={birthDetails}
+          onChange={setBirthDetails}
+          error={calcError}
+        />
+      )}
+      {screen === 2 && (
+        <Calculating
+          details={birthDetails}
+          onSuccess={(chart) => {
+            setNatalChart(chart);
+            goTo(3);
+          }}
+          onError={(message) => {
+            setCalcError(message);
+            goTo(1);
+          }}
+        />
+      )}
+      {screen === 3 && (
+        <EssenceReveal onBack={() => goTo(1)} onNext={() => goTo(4)} result={result} profileLine={profileLine} />
+      )}
+      {screen === 4 && <SignaturePalette onBack={() => goTo(3)} onNext={() => goTo(5)} result={result} />}
+      {screen === 5 && <WhyTheseColors onBack={() => goTo(4)} onNext={() => goTo(6)} result={result} />}
+      {screen === 6 && <StyleDirection onBack={() => goTo(5)} onNext={() => goTo(7)} result={result} />}
+      {screen === 7 && (
+        <OutfitBoard onBack={() => goTo(6)} onNext={() => goTo(8)} result={result} unlocked={unlocked} />
+      )}
+      {screen === 8 && (
+        <Paywall
+          onBack={() => goTo(7)}
+          onUnlock={() => {
+            setUnlocked(true);
+            goTo(9);
+          }}
+          onSkip={() => goTo(9)}
+        />
+      )}
+      {screen === 9 && <SaveShare onBack={() => goTo(7)} onRestart={() => goTo(1)} />}
+    </div>
+  );
+}
