@@ -5,6 +5,7 @@ import { EMPTY_BIRTH_DETAILS, MOCK_RESULT, type BirthDetails as BirthDetailsData
 import { formatProfileLine, type NatalChart } from "@/lib/astrology/natal-chart";
 import { interpretColorAttributes, interpretStyleAttributes } from "@/lib/interpretation/interpret";
 import { generatePalette } from "@/lib/color-engine/engine";
+import { recommendMetals } from "@/lib/color-engine/metals";
 import { generateStyleBoard } from "@/lib/style-engine/engine";
 import { generateEssence } from "@/lib/copy-engine/engine";
 import { generateWhyTheseColors } from "@/lib/copy-engine/why-these-colors";
@@ -41,6 +42,8 @@ export default function AppFlow() {
     const palette = generatePalette(colorAttributes);
     const board = generateStyleBoard(styleAttributes, colorAttributes.contrast);
     const essence = generateEssence(colorAttributes, styleAttributes);
+    const metals = recommendMetals(colorAttributes);
+    const metalNames = metals.map((m) => m.name.toLowerCase()).join(" or ");
 
     return {
       ...MOCK_RESULT,
@@ -51,10 +54,11 @@ export default function AppFlow() {
       baseColors: palette.base,
       statementColors: palette.statement,
       freshAccents: palette.accents,
+      metals,
       styleDirection: [
         { label: "SILHOUETTES", value: board.direction.silhouettes },
         { label: "FABRICS", value: board.direction.fabrics },
-        { label: "JEWELRY", value: board.direction.jewelry },
+        { label: "JEWELRY", value: `${board.direction.jewelry} — in ${metalNames}` },
         { label: "CONTRAST", value: board.direction.contrast },
       ],
       archetypes: MOCK_RESULT.archetypes.map((a, i) => ({
