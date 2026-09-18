@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import AppTopBar from "@/components/AppTopBar";
 import type { StyleResult, SwatchColor } from "@/lib/style-data";
 
@@ -15,6 +15,13 @@ type ImageState = { status: "idle" | "loading" | "done" | "error"; dataUrl?: str
 
 export default function OutfitBoard({ onBack, onNext, result, unlocked }: Props) {
   const [images, setImages] = useState<Record<string, ImageState>>({});
+  // Tracks which archetype ids have already had a fetch *started*, mutated
+  // synchronously (unlike state) so it can't go stale. React 18 StrictMode
+  // double-invokes effects in dev, and `result` is rebuilt fresh on every
+  // AppFlow render — both re-ran this effect with a stale `images` closure
+  // still showing {}, so the `images[a.id] !== undefined` guard alone let a
+  // real, billed Gemini call fire twice per card.
+  const startedIds = useRef(new Set<string>());
 
   const allColors: SwatchColor[] = [
     ...result.signaturePalette,
@@ -26,8 +33,8 @@ export default function OutfitBoard({ onBack, onNext, result, unlocked }: Props)
   useEffect(() => {
     result.archetypes.forEach((a) => {
       const isLocked = a.locked && !unlocked;
-      const alreadyHandled = images[a.id] !== undefined;
-      if (isLocked || alreadyHandled || !a.silhouettes) return;
+      if (isLocked || startedIds.current.has(a.id) || !a.silhouettes) return;
+      startedIds.current.add(a.id);
 
       setImages((prev) => ({ ...prev, [a.id]: { status: "loading" } }));
 

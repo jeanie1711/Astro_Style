@@ -38,6 +38,6 @@ export function buildOutfitPrompt(archetype: ArchetypeForPrompt, allColors: Swat
     `Fabric: ${archetype.fabrics}.`,
     `Jewelry: ${archetype.jewelry}.`,
     `Color palette: ${colorNames}.`,
-    `Editorial fashion photography, soft studio lighting, neutral seamless background, high-fashion magazine quality, full body shot, sharp focus.`,
+    `Editorial fashion photography, soft studio lighting, neutral seamless background, high-fashion magazine quality, full body shot, sharp focus, vertical portrait orientation, 4:5 aspect ratio.`,
   ].join(" ");
 }
