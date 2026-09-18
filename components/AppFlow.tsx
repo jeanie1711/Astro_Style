@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import type { ImageState } from "@/lib/image-engine/types";
 import { EMPTY_BIRTH_DETAILS, MOCK_RESULT, type BirthDetails as BirthDetailsData, type StyleResult } from "@/lib/style-data";
 import { formatProfileLine, type NatalChart } from "@/lib/astrology/natal-chart";
 import { interpretColorAttributes, interpretStyleAttributes } from "@/lib/interpretation/interpret";
@@ -28,6 +29,12 @@ export default function AppFlow() {
   const [birthDetails, setBirthDetails] = useState<BirthDetailsData>(EMPTY_BIRTH_DETAILS);
   const [natalChart, setNatalChart] = useState<NatalChart | null>(null);
   const [calcError, setCalcError] = useState<string | null>(null);
+  // Lives here, not inside OutfitBoard, so it survives OutfitBoard
+  // unmounting when the user goes to the Paywall and back — otherwise
+  // returning from an unlock re-triggered (and re-billed) generation for
+  // cards that had already finished.
+  const [outfitImages, setOutfitImages] = useState<Record<string, ImageState>>({});
+  const startedOutfitIds = useRef(new Set<string>());
 
   const goTo = (n: number) => setScreen(Math.max(0, Math.min(SCREEN_COUNT - 1, n)));
 
@@ -114,14 +121,26 @@ export default function AppFlow() {
       {screen === 5 && <WhyTheseColors onBack={() => goTo(4)} onNext={() => goTo(6)} result={result} />}
       {screen === 6 && <StyleDirection onBack={() => goTo(5)} onNext={() => goTo(7)} result={result} />}
       {screen === 7 && (
-        <OutfitBoard onBack={() => goTo(6)} onNext={() => goTo(8)} result={result} unlocked={unlocked} />
+        <OutfitBoard
+          onBack={() => goTo(6)}
+          onNext={() => goTo(unlocked ? 9 : 8)}
+          result={result}
+          unlocked={unlocked}
+          images={outfitImages}
+          setImages={setOutfitImages}
+          startedIds={startedOutfitIds}
+        />
       )}
       {screen === 8 && (
         <Paywall
           onBack={() => goTo(7)}
           onUnlock={() => {
+            // Back to the board (not straight to Save/Share) so the newly
+            // unlocked cards actually mount and generate their images —
+            // OutfitBoard's fetch effect only runs while it's mounted, and
+            // jumping past it meant the paid-for unlock never showed anything.
             setUnlocked(true);
-            goTo(9);
+            goTo(7);
           }}
           onSkip={() => goTo(9)}
         />

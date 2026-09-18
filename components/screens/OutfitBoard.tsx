@@ -1,28 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import AppTopBar from "@/components/AppTopBar";
 import type { StyleResult, SwatchColor } from "@/lib/style-data";
+import type { ImageState } from "@/lib/image-engine/types";
 
 type Props = {
   onBack: () => void;
   onNext: () => void;
   result: StyleResult;
   unlocked: boolean;
+  // Owned by AppFlow, not this component — OutfitBoard unmounts when the
+  // user goes to the Paywall screen and remounts on the way back (unlock
+  // needs the board mounted again to generate the newly-unlocked cards).
+  // Local state/refs would have reset on that remount and silently
+  // re-triggered (and re-billed) generation for cards already done.
+  images: Record<string, ImageState>;
+  setImages: React.Dispatch<React.SetStateAction<Record<string, ImageState>>>;
+  startedIds: React.RefObject<Set<string>>;
 };
 
-type ImageState = { status: "idle" | "loading" | "done" | "error"; dataUrl?: string };
-
-export default function OutfitBoard({ onBack, onNext, result, unlocked }: Props) {
-  const [images, setImages] = useState<Record<string, ImageState>>({});
-  // Tracks which archetype ids have already had a fetch *started*, mutated
-  // synchronously (unlike state) so it can't go stale. React 18 StrictMode
-  // double-invokes effects in dev, and `result` is rebuilt fresh on every
-  // AppFlow render — both re-ran this effect with a stale `images` closure
-  // still showing {}, so the `images[a.id] !== undefined` guard alone let a
-  // real, billed Gemini call fire twice per card.
-  const startedIds = useRef(new Set<string>());
-
+export default function OutfitBoard({ onBack, onNext, result, unlocked, images, setImages, startedIds }: Props) {
   const allColors: SwatchColor[] = [
     ...result.signaturePalette,
     ...result.baseColors,
@@ -120,7 +118,7 @@ export default function OutfitBoard({ onBack, onNext, result, unlocked }: Props)
           onClick={onNext}
           className="mt-0.5 rounded-full bg-ink py-4 text-sm font-semibold text-ivory"
         >
-          Unlock Full Board
+          {unlocked ? "Continue" : "Unlock Full Board"}
         </button>
       </div>
     </div>
