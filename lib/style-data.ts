@@ -16,6 +16,11 @@ export type Archetype = {
   imageLabel: string;
   swatches: string[];
   locked: boolean;
+  // Present once a real chart is computed — the Style Engine's per-lens
+  // silhouette/fabric/jewelry, used to build that archetype's image prompt.
+  silhouettes?: string;
+  fabrics?: string;
+  jewelry?: string;
 };
 
 export type PlacementExplanation = {

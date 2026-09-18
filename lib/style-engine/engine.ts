@@ -74,7 +74,18 @@ export function generateStyleBoard(style: StyleAttributes, colorContrast: number
   const archetypes = LENSES.map((lens) => {
     const biased = applyLens(style, lens);
     const { tags, desc } = buildArchetypeText(biased, usedLeadDims);
-    return { name: lens.name, tags, desc };
+    return {
+      name: lens.name,
+      tags,
+      desc,
+      // Per-lens, not the overall `direction` above — otherwise every
+      // archetype's image prompt shared the same silhouette/fabric/jewelry
+      // text and all 4 generated as near-identical outfits regardless of
+      // occasion (found via real image-gen testing).
+      silhouettes: buildPhrase(biased, SILHOUETTE_HINTS),
+      fabrics: buildPhrase(biased, FABRIC_HINTS),
+      jewelry: buildPhrase(biased, JEWELRY_HINTS),
+    };
   });
 
   return { direction, archetypes };

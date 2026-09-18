@@ -65,6 +65,9 @@ export default function AppFlow() {
         ...a,
         tags: board.archetypes[i].tags,
         desc: board.archetypes[i].desc,
+        silhouettes: board.archetypes[i].silhouettes,
+        fabrics: board.archetypes[i].fabrics,
+        jewelry: board.archetypes[i].jewelry,
         swatches: [
           palette.signature[i % palette.signature.length].hex,
           palette.signature[(i + 2) % palette.signature.length].hex,

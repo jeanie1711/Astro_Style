@@ -9,6 +9,9 @@ export type GeneratedArchetype = {
   name: string;
   tags: string;
   desc: string;
+  silhouettes: string;
+  fabrics: string;
+  jewelry: string;
 };
 
 export type GeneratedStyleBoard = {
